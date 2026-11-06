@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#11131b">
+    <title>Bildspel — dina bilder, din stund</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --page: #11131b;
+            --panel: #191c26;
+            --panel-light: #222632;
+            --text: #f5f3ef;
+            --muted: #9a9eab;
+            --accent: #d7f277;
+            --line: rgba(255, 255, 255, .1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+            background:
+                radial-gradient(ellipse at 50% -20%, rgba(116, 128, 74, .16), transparent 55%),
+                var(--page);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        button { font: inherit; }
+        button { color: inherit; }
+
+        .app {
+            width: min(1120px, calc(100% - 48px));
+            margin: 0 auto;
+            padding: 34px 0 42px;
+        }
+
+        .topbar, .brand, .actions, .controls, .counter, .thumb-heading {
+            display: flex;
+            align-items: center;
+        }
+
+        .topbar { justify-content: space-between; margin-bottom: 42px; }
+        .brand { gap: 12px; }
+        .brand-mark {
+            display: grid;
+            width: 38px;
+            height: 38px;
+            place-items: center;
+            border: 1px solid rgba(215, 242, 119, .28);
+            border-radius: 12px;
+            background: rgba(215, 242, 119, .08);
+            color: var(--accent);
+        }
+        .brand-name { font-size: 15px; font-weight: 650; letter-spacing: -.02em; }
+        .local-note { color: var(--muted); font-size: 13px; }
+
+        main { max-width: 900px; margin: 0 auto; }
+        .intro { margin-bottom: 25px; }
+        .eyebrow {
+            margin: 0 0 9px;
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+        h1 { margin: 0; font-size: clamp(30px, 5vw, 46px); font-weight: 560; letter-spacing: -.055em; }
+        .subtitle { margin: 10px 0 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+
+        .viewer {
+            position: relative;
+            display: grid;
+            min-height: clamp(320px, 52vw, 540px);
+            overflow: hidden;
+            place-items: center;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background:
+                radial-gradient(ellipse at center, rgba(255, 255, 255, .035), transparent 65%),
+                #0c0e14;
+        }
+        .photo {
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-height: 540px;
+            position: absolute;
+            inset: 0;
+            object-fit: contain;
+        }
+        .icon-button, .thumb {
+            border: 0;
+            cursor: pointer;
+        }
+
+        .photo-info {
+            position: absolute;
+            right: 16px;
+            bottom: 15px;
+            left: 16px;
+            display: flex;
+            align-items: end;
+            gap: 16px;
+            pointer-events: none;
+        }
+        .photo-name {
+            max-width: 100%;
+            overflow: hidden;
+            padding: 9px 12px;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 10px;
+            background: rgba(17, 19, 27, .78);
+            color: #f5f3ef;
+            font-size: 12px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            backdrop-filter: blur(12px);
+        }
+
+        .controls {
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 2px 21px;
+            border-bottom: 1px solid var(--line);
+        }
+        .counter { gap: 5px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+        .counter strong { color: var(--text); font-weight: 650; }
+        .actions { gap: 9px; }
+        .icon-button {
+            display: inline-flex;
+            min-height: 40px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 12px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--panel);
+            color: var(--text);
+            font-size: 13px;
+            transition: background .15s, border-color .15s;
+        }
+        .icon-button:hover:not(:disabled) { border-color: rgba(255, 255, 255, .23); background: var(--panel-light); }
+        .icon-button:disabled { cursor: not-allowed; opacity: .4; }
+        .icon-button.primary { border-color: rgba(215, 242, 119, .25); color: var(--accent); }
+
+        .thumb-heading { justify-content: space-between; margin: 20px 0 12px; }
+        .thumb-heading h2 { margin: 0; color: #d5d6dc; font-size: 12px; font-weight: 650; letter-spacing: .04em; }
+        .thumb-heading span { color: var(--muted); font-size: 12px; }
+        .thumbnails { display: flex; min-height: 78px; gap: 10px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-color: #414550 transparent; scrollbar-width: thin; }
+        .thumb {
+            position: relative;
+            width: 98px;
+            height: 68px;
+            flex: 0 0 auto;
+            overflow: hidden;
+            padding: 0;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            background: var(--panel);
+            opacity: .62;
+            transition: opacity .16s, border-color .16s;
+        }
+        .thumb:hover { opacity: .9; }
+        .thumb.active { border: 2px solid var(--accent); opacity: 1; }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .thumb-index {
+            position: absolute;
+            right: 5px;
+            bottom: 5px;
+            padding: 2px 5px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, .66);
+            color: white;
+            font-size: 10px;
+        }
+        [hidden] { display: none !important; }
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+
+        @media (max-width: 600px) {
+            .app { width: min(100% - 32px, 900px); padding-top: 22px; }
+            .topbar { margin-bottom: 34px; }
+            .local-note { max-width: 125px; text-align: right; font-size: 11px; }
+            .viewer { min-height: 58vh; border-radius: 15px; }
+            .photo { max-height: 58vh; }
+            .controls { align-items: start; }
+            .actions { flex-wrap: wrap; justify-content: end; }
+            .icon-button { min-height: 38px; padding: 0 10px; }
+            .icon-button .button-label { display: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="topbar">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path d="m5 17 4.5-4 3.2 2.7 2.5-2 3.8 3.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="brand-name">Bildspel</span>
+            </div>
+            <span class="local-note">Ett galleri med utvalda bilder</span>
+        </header>
+
+        <main>
+            <section class="intro" aria-labelledby="page-title">
+                <p class="eyebrow">Ditt personliga galleri</p>
+                <h1 id="page-title">Bilder värda att stanna vid.</h1>
+                <p class="subtitle">Bläddra bland bilderna i bildspelet.</p>
+            </section>
+
+            <section aria-label="Bildspel">
+                <div class="viewer" aria-live="polite">
+                    <img class="photo" id="currentPhoto" alt="">
+                    <div class="photo-info" id="photoInfo">
+                        <span class="photo-name" id="photoName"></span>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="counter" aria-label="Bildnummer">
+                        <strong id="currentCount">1</strong><span>/</span><span id="totalCount"></span>
+                    </div>
+                    <div class="actions">
+                        <button class="icon-button primary" id="playButton" type="button" disabled aria-label="Starta bildspel">
+                            <svg id="playIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" fill="currentColor" stroke="currentColor" stroke-linejoin="round"/></svg>
+                            <span class="button-label" id="playLabel">Spela upp</span>
+                        </button>
+                        <button class="icon-button" id="previousButton" type="button" disabled aria-label="Föregående bild">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span class="button-label">Föregående</span>
+                        </button>
+                        <button class="icon-button" id="nextButton" type="button" disabled aria-label="Nästa bild">
+                            <span class="button-label">Nästa</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="thumb-heading">
+                    <h2>DINA BILDER</h2>
+                    <span id="thumbCount"></span>
+                </div>
+                <div class="thumbnails" id="thumbnails" aria-label="Välj bild"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const currentPhoto = document.getElementById("currentPhoto");
+        const photoName = document.getElementById("photoName");
+        const thumbnails = document.getElementById("thumbnails");
+        const currentCount = document.getElementById("currentCount");
+        const totalCount = document.getElementById("totalCount");
+        const thumbCount = document.getElementById("thumbCount");
+        const previousButton = document.getElementById("previousButton");
+        const nextButton = document.getElementById("nextButton");
+        const playButton = document.getElementById("playButton");
+        const playIcon = document.getElementById("playIcon");
+        const playLabel = document.getElementById("playLabel");
+        const images = [
+            { name: "Bilarsida – Abdul", url: "bilarsidaabdul.jpg" },
+            { name: "Kod – Viera", url: "kodviera.jpg" },
+            { name: "Konstantins sida", url: "konstantinssida.jpg" },
+            { name: "Mer av Konstantin", url: "meravkonstantin.jpg" },
+            { name: "Mer av Konstantins sida", url: "meravsidankonstantin.jpg" },
+            { name: "Mer kod – Viera", url: "merkodviera.jpg" },
+            { name: "Random Store – Abdul", url: "randomstoreabdul.jpg" },
+            { name: "Webbens sitemap – Abdul", url: "sitemapabdul.jpg" },
+            { name: "Webbens historia – Abdul", url: "webbenshistoraabdul.jpg" },
+            { name: "Webbens historia – Viera", url: "webbenshistoriaviera.jpg" },
+            { name: "Ännu mer kod – Viera", url: encodeURI("ännumerkodviera.jpg") },
+            { name: "Ännu mer av Konstantin", url: encodeURI("ännumerkonstantin.jpg") },
+            { name: "Förbättra vanor – startsida", url: encodeURI("första.jpg") },
+            { name: "Förbättra vanor – skapa konto", url: "andra.jpg" },
+            { name: "Förbättra vanor – logga in", url: "fjärde.jpg" },
+            { name: "Förbättra vanor – översikt", url: "femte.jpg" }
+        ];
+        let activeIndex = 0;
+        let slideshowTimer;
+
+        function stopSlideshow() {
+            window.clearInterval(slideshowTimer);
+            slideshowTimer = undefined;
+            playButton.setAttribute("aria-label", "Starta bildspel");
+            playLabel.textContent = "Spela upp";
+            playIcon.innerHTML = '<path d="m8 5 11 7-11 7V5Z" fill="currentColor" stroke="currentColor" stroke-linejoin="round"/>';
+        }
+
+        function render() {
+            playButton.disabled = images.length < 2;
+            previousButton.disabled = images.length < 2;
+            nextButton.disabled = images.length < 2;
+            currentCount.textContent = String(activeIndex + 1);
+            totalCount.textContent = String(images.length);
+            thumbCount.textContent = `${images.length} bilder`;
+
+            const image = images[activeIndex];
+            currentPhoto.src = image.url;
+            currentPhoto.alt = image.name;
+            photoName.textContent = image.name;
+            thumbnails.replaceChildren(...images.map((item, index) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `thumb${index === activeIndex ? " active" : ""}`;
+                button.setAttribute("aria-label", `Visa bild ${index + 1}: ${item.name}`);
+                button.setAttribute("aria-pressed", String(index === activeIndex));
+                const thumbnail = document.createElement("img");
+                thumbnail.src = item.url;
+                thumbnail.alt = "";
+                thumbnail.loading = "lazy";
+                const number = document.createElement("span");
+                number.className = "thumb-index";
+                number.textContent = String(index + 1);
+                button.append(thumbnail, number);
+                button.addEventListener("click", () => {
+                    activeIndex = index;
+                    render();
+                });
+                return button;
+            }));
+        }
+
+        previousButton.addEventListener("click", () => {
+            if (images.length > 1) {
+                activeIndex = (activeIndex - 1 + images.length) % images.length;
+                render();
+            }
+        });
+        nextButton.addEventListener("click", () => {
+            if (images.length > 1) {
+                activeIndex = (activeIndex + 1) % images.length;
+                render();
+            }
+        });
+        playButton.addEventListener("click", () => {
+            if (slideshowTimer) {
+                stopSlideshow();
+                return;
+            }
+            playButton.setAttribute("aria-label", "Pausa bildspel");
+            playLabel.textContent = "Pausa";
+            playIcon.innerHTML = '<path d="M8 5h3v14H8zm5 0h3v14h-3z" fill="currentColor"/>';
+            slideshowTimer = window.setInterval(() => {
+                activeIndex = (activeIndex + 1) % images.length;
+                render();
+            }, 3000);
+        });
+
+        document.addEventListener("keydown", event => {
+            if (event.altKey || event.ctrlKey || event.metaKey || event.target.matches("input, textarea, select, button")) return;
+            if (event.key === "ArrowLeft" && images.length > 1) previousButton.click();
+            if (event.key === "ArrowRight" && images.length > 1) nextButton.click();
+            if (event.key === " " && images.length > 1) {
+                event.preventDefault();
+                playButton.click();
+            }
+        });
+
+        render();
+    </script>
+</body>
+</html>
+
+<!--https://blomsterpassagen.netlify.app/  och https://crazyahh-hole.github.io/webbutveckling2/historia.html  och https://leafy-gaufre-0ccb09.netlify.app/-->
